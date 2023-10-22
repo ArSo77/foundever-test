@@ -1,22 +1,19 @@
 <script setup lang="ts">
-import { computed, ref, inject } from "vue";
-import { storeToRefs } from "pinia";
+import {computed, ref } from "vue";
 import { TCryptoData } from "@/stores/crypto.types";
-import { useCryptoStore } from "@/stores/crypto";
 import { BaseCryptoChart, FavoriteStar, Spinner } from "@/app.organizer";
 import { useIntersectionObserver } from "@vueuse/core";
 import useCurrencySymbol from "@/composables/useCurrencySymbol";
 
 import { ROUTE_CRYPTO_VIEW } from "@/app.routes";
+import useCrypto from "@/stores/useCrypto";
 
 const props = defineProps<{
     itemId: string,
 }>();
 
-const cryptoStore = useCryptoStore();
 
-const { currencyActive, cryptoList, cryptoFavorites } = storeToRefs(cryptoStore);
-const { addFavorite, removeFavorite } = cryptoStore;
+const { currencyActive, cryptoList, cryptoFavorites,  addFavorite, removeFavorite} = useCrypto();
 
 const crypto = ref(cryptoList.value.get(props.itemId) as TCryptoData)
 
@@ -26,7 +23,7 @@ const chartElement = ref();
 const chartIsVisible = ref(true);
 
 const isInFavorites = computed(() =>
-  crypto.value ? (cryptoFavorites.value.get(crypto.value.id) ? true : false): false
+  crypto.value ? (!!cryptoFavorites.value.get(crypto.value.id)): false
 );
 
 const toggleFavorite = () => {
@@ -36,7 +33,7 @@ const toggleFavorite = () => {
 };
 
 useIntersectionObserver(chartElement, ([{ isIntersecting }]) => {
-  chartIsVisible.value = true;
+  chartIsVisible.value = isIntersecting;
 });
 
 const calculatedSparkline = computed(() => {
@@ -60,13 +57,14 @@ const orderedSparkLabels = computed(() => {
     } else return "";
   });
 });
+
 </script>
 
 <template>
   <div
     class="line-crypto w-100 block flex flex-1 h-16 mb-1 cursor-pointer"
     @click="
-      (event) =>
+      () =>
         $router.push({
           name: ROUTE_CRYPTO_VIEW.name,
           params: { id: crypto.id },
@@ -76,7 +74,7 @@ const orderedSparkLabels = computed(() => {
     <div class="flex w-20 pl-2 pr-2 items-center">
       <img
         v-if="crypto.image"
-        :src="crypto.image"
+        v-lazy="crypto.image"
         class="w-8 h-8 border-round rounded-full"
       />
       <Spinner v-else color="#DDD" size="small" class="inline-block mx-auto" />

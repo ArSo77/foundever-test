@@ -2,7 +2,7 @@
 const props = defineProps<{
   index: string;
   default: string;
-  options: 
+  options:
     {
       label: string;
       value: string;

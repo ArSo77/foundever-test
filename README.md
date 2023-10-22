@@ -5,7 +5,7 @@
 
 **main** branch :
 
-Pinia + Tailwind 
+~~Pinia~~ + Tailwind 
 
 **new-arch** branch : 
 
@@ -17,3 +17,5 @@ Native Store + CSS/SCSS + Vuetify
 > npm install
 
 > npm run dev
+
+

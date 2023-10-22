@@ -46,7 +46,7 @@ const dynamicWatcher = computed(() => props.watcher);
 const filteredList = computed(() => {
   const filters = Object.entries(dynamicFilters.value)
   if (!filters.length) return Array.from(props.items).map(([_, value]) => value)
-  return Array.from(props.items).map(([_, value]) => value).filter((item, index) => {
+  return Array.from(props.items).map(([_, value]) => value).filter((item) => {
     for (let [ref, { indexes, values }] of filters) {
       for (let index of indexes) {
         for (let value of values) {
@@ -57,7 +57,7 @@ const filteredList = computed(() => {
   })
 })
 
-const optimizedList = computed(() => { 
+const optimizedList = computed(() => {
   return filteredList.value.slice(0, blocCurrent.value * props.itemsByBloc)
 })
 
@@ -108,10 +108,10 @@ const onReset = async() => {
 watch(
   [orderedList, dynamicWatcher],
   ([newOptimizedList], [oldOptimizedList]) => {
-    emit("onRequestNextBloc", {
-      newList: newOptimizedList,
-      oldList: oldOptimizedList,
-    });
+        emit("onRequestNextBloc", {
+            newList: newOptimizedList,
+            oldList: oldOptimizedList,
+        });
   }
 );
 
@@ -141,7 +141,7 @@ defineExpose({
   <div
     ref="scroller"
     class="scroller h-10 overflow-y-scroll flex-auto"
-  > 
+  >
     <div
       v-if="!orderedList.length"
       class="flex flex-1 h-full text-4xl font-bold justify-center items-center"

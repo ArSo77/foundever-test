@@ -4,7 +4,6 @@ import {
   computed,
   inject,
   DefineComponent,
-  onMounted,
   watch,
   Ref,
 } from "vue";
@@ -17,12 +16,11 @@ import {
   BaseLineCrypto,
   BaseLoader,
 } from "@/app.organizer";
-import { useCryptoStore } from "@/stores/crypto";
 import { useI18n } from "vue-i18n";
 import { TCryptoData } from "@/stores/crypto.types";
 import { IAppProvider } from "@/providers/app";
-import { storeToRefs } from "pinia";
 import { useRoute } from "vue-router";
+import useCrypto from "@/stores/useCrypto";
 
 type TEventLists = {
   newList: TCryptoData[];
@@ -39,21 +37,22 @@ const props = defineProps<{
 
 const { t: print } = useI18n();
 
-const cryptoStore = useCryptoStore();
 const {
-  currencyActive,
-  currenciesList,
-  isReadyCategories,
-  isReadyCurrencies,
-  isReadyCryptoList,
-} = storeToRefs(cryptoStore);
+    currencyActive,
+    currenciesList,
+    isReadyCategories,
+    isReadyCurrencies,
+    isReadyCryptoList,
+    fetchCryptosInfos,
+    setCurrencyActive
+} = useCrypto()
 
-const { fetchCryptosInfos, setCurrencyActive } = cryptoStore;
+
 const isReadyCryptoStore = computed(
-  () => isReadyCategories.value && isReadyCurrencies.value && isReadyCryptoList.value
+  () => isReadyCategories && isReadyCurrencies && isReadyCryptoList
 );
 
-const itemsByPage = 150;
+const itemsByPage = 40;
 const dynamicController = ref() as Ref<typeof BaseDynamicList>;
 const refInputFilter = ref() as Ref<typeof BaseInputFilter>;
 
@@ -82,14 +81,6 @@ watch(
     if (dynamicController) dynamicController.value.onReset();
   }
 );
-
-onMounted(async () => {
-  fetchCryptosInfos(
-    Array.from(props.cryptoList)
-      .map(([key, value]) => value)
-      .slice(0, itemsByPage)
-  );
-});
 </script>
 
 <template>

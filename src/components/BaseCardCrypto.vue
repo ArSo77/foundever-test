@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { storeToRefs } from "pinia";
 import { TCryptoData } from "@/stores/crypto.types";
-import { useCryptoStore } from "@/stores/crypto";
 import {
   BaseCryptoChart,
   BaseSelectFilter,
@@ -11,30 +9,30 @@ import {
 } from "@/app.organizer";
 import useCurrencySymbol from "@/composables/useCurrencySymbol";
 import { useI18n } from "vue-i18n";
+import useCrypto from "@/stores/useCrypto";
 
 const props = defineProps<{
-    itemId: string,
+    item: TCryptoData,
+    favorite: boolean,
+    currencyActive: string,
+    currenciesList: string[],
 }>();
 
-const cryptoStore = useCryptoStore();
+const emit = defineEmits<{
+    (e: "addFavorite", {}): void;
+    (e: "removeFavorite", {}): void;
+    (e: "setCurrencyActive", {}): void;
+}>();
 
-const { currencyActive, cryptoFavorites, currenciesList,  cryptoList } =
-  storeToRefs(cryptoStore);
+const {
+    currencyActive, currenciesList
+} = useCrypto()
 
-const { setCurrencyActive, addFavorite, removeFavorite } = cryptoStore;
-
-const crypto = ref(cryptoList.value.get(props.itemId) as TCryptoData)
+const crypto = ref(props.item)
 const currencySymbol = computed(() => useCurrencySymbol(currencyActive.value));
 const chartElement = ref();
 
 const { t: print } = useI18n();
-
-const isInFavorites = computed(() => {
-        if (crypto.value)
-            !!cryptoFavorites.value.get(crypto.value.id)
-        return false;
-})
-
 
 const currenciesListOptions = computed(() => {
   return currenciesList.value.map((c) => {
@@ -46,20 +44,20 @@ const currenciesListOptions = computed(() => {
 });
 
 const toggleFavorite = () => {
-  if (isInFavorites.value && crypto.value) {
-    removeFavorite(crypto.value);
-  } else if (crypto.value) addFavorite(crypto.value);
+  if (props.favorite && crypto.value) {
+    emit('removeFavorite', crypto.value)
+  } else if (crypto.value) emit('addFavorite',crypto.value);
 };
 
 const calculatedSparkline = computed(() => {
-  if (!crypto?.value?.sparkline_in_7d?.length) return false;
+  if (!crypto?.value?.sparkline_in_7d?.length) return [];
   const toReduce = crypto.value.sparkline_in_7d;
   const reduced = toReduce.reduce((acc, val, index) => {
     if (index && index % 23 === 0) acc.push(val);
     return acc;
   }, new Array<number>());
 
-  return reduced.length > 3 ? reduced : false;
+  return reduced.length > 3 ? reduced : [];
 });
 
 const orderedSparkLabels = computed(() => {
@@ -93,7 +91,7 @@ const orderedSparkLabels = computed(() => {
       >
         <div
           class="flex col-span-10 lg:col-span-2 justify-center lg:justify-start items-center lg:p-2 lg:pr-4  font-bold text-5xl stroke-black a-1 d-600 fadeIn"
-          style="text-stroke: 2px white;"
+          style="-webkit-text-stroke: 2px white;"
         >
           {{
             crypto.name.length > 35
@@ -142,7 +140,7 @@ const orderedSparkLabels = computed(() => {
             index="currency"
             :default="currencyActive"
             :options="currenciesListOptions"
-            @onChange="setCurrencyActive"
+            @onChange="emit('setCurrencyActive', $event)"
             class="lg:rounded-r-full rounded-full h-10 mt-2 mb-2 lg:mt-0 lg:mb-0 shadow uppercase font-bold pl-3 a-08 d-500 fadeInDown"
           />
         </div>
@@ -150,12 +148,12 @@ const orderedSparkLabels = computed(() => {
           class="flex col-span-10 lg:col-span-2 items-center justify-center lg:justify-end pb-4 lg:pr-3 lg:pr-10"
         >
           <div class="flex items-center" @click.prevent.stop="toggleFavorite">
-            <FavoriteStar :active="isInFavorites" class="pr" />
+            <FavoriteStar :active="props.favorite" class="pr" />
             <span
               class="pl-1 text-xs cursor-pointer"
-              :class="[(isInFavorites ? 'text-gray-400 capitalize' : 'hover:underline')]"
+              :class="[(props.favorite ? 'text-gray-400 capitalize' : 'hover:underline')]"
             >
-              {{ isInFavorites ? print('favorite') : print('add_to_favorites')}}
+              {{ props.favorite ? print('favorite') : print('add_to_favorites')}}
             </span>
           </div>
         </div>
@@ -165,7 +163,7 @@ const orderedSparkLabels = computed(() => {
       class="flex flex-1 w-200 items-center text-black dark:text-white lg:pr-3 mt-10"
       :ref="(ref) => (chartElement = ref)"
     >
-      <template v-if="calculatedSparkline">
+      <template v-if="calculatedSparkline.length > 0">
         <BaseCryptoChart
           :sparkline="calculatedSparkline"
           :labels="orderedSparkLabels"

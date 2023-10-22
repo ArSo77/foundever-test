@@ -1,4 +1,4 @@
-export default function useCurrencySmbol(currencyActive: string) {
+export default function useCurrencySymbol(currencyActive: string) {
   switch (currencyActive) {
     case "btc":
       return "฿";

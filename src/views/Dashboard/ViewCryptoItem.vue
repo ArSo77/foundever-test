@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { inject, computed, watch, ref, onMounted } from "vue";
 import { BaseCardCrypto, BaseLoader } from "@/app.organizer";
-import { useCryptoStore } from "@/stores/crypto";
+import useCrypto from "@/stores/useCrypto";
 import { useI18n } from "vue-i18n";
 import { TCryptoData } from "@/stores/crypto.types";
 import { IAppProvider } from "@/providers/app";
-import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
 import { ROUTE_CRYPTO_OVERVIEW } from "@/app.routes";
 
@@ -17,39 +16,38 @@ const id = router.currentRoute.value.params.id as string;
 
 const item = ref<TCryptoData>()
 
-const cryptoStore = useCryptoStore();
-
 const {
-  fetchCryptosInfos
-} = cryptoStore;
-
-const {
-  currencyActive,
-  currenciesList,
-  cryptoList,
-  isReadyCategories,
-  isReadyCurrencies,
-  isReadyCryptoList,
-} = storeToRefs(cryptoStore);
+    fetchCryptosInfos,
+    addFavorite,
+    cryptoFavorites,
+    removeFavorite,
+    currencyActive,
+    currenciesList,
+    setCurrencyActive,
+    cryptoList,
+    isReadyCurrencies,
+    isReadyCryptoList,
+    isReadyCategories,
+} = useCrypto();
 
 const isReadyCryptoStore = computed(
-  () => isReadyCategories.value && isReadyCurrencies.value && isReadyCryptoList.value
+  () => isReadyCategories && isReadyCurrencies && isReadyCryptoList
 );
 
 const { t: print }= useI18n();
 
-watch(isReadyCryptoStore, (newState) => { 
+watch(isReadyCryptoStore, (newState) => {
   if (newState && id && registerItem()) fetchItemInfos();
 });
 
-watch(currencyActive, (newCrypto) => {
+watch(currencyActive, () => {
   fetchItemInfos()
 })
 
 
 const registerItem = () => {
   const storeItem = cryptoList.value.get(id as string);
-  if (storeItem) { 
+  if (storeItem) {
     item.value = storeItem;
     return true
   }
@@ -58,9 +56,14 @@ const registerItem = () => {
     return false;
   }
 }
-const fetchItemInfos = () => { 
+const fetchItemInfos = () => {
   if (item.value) fetchCryptosInfos([item.value])
-} 
+}
+
+const isInFavorites = computed(() => {
+    if (item.value) return !!cryptoFavorites.value.get(item.value.id)
+    return false;
+})
 
 onMounted(() => {
   if (isReadyCryptoStore.value) {
@@ -77,7 +80,14 @@ onMounted(() => {
     {{  isReadyCryptoStore ?'tru' :'false' }}
   </div>
   <div v-else-if="isReadyCryptoStore && item" class="flex flex-1 relative">
-    <BaseCardCrypto :data="item" :item-id="item.id" />
+    <BaseCardCrypto
+            :item="item"
+            :favorite="isInFavorites"
+            :currencyActive="currencyActive"
+            :currenciesList="currenciesList"
+            @removeFavorite="removeFavorite($event)"
+            @addFavorite="addFavorite($event)"
+            @setCurrencyActive="setCurrencyActive($event)"/>
   </div>
 </template>
 
